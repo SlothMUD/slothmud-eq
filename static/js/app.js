@@ -4,7 +4,8 @@
   const resultsList = document.querySelector("#results-list");
   const resultCount = document.querySelector("#result-count");
   const noResults = document.querySelector("#no-results");
-  const loadMore = document.querySelector("#load-more");
+  const loadAllContainer = document.querySelector("#load-all-container");
+  const loadAllButton = document.querySelector("#load-all-results");
   const loadError = document.querySelector("#load-error");
   const searchInput = document.querySelector("#search");
   const sortControl = document.querySelector(".sort-segments");
@@ -12,11 +13,12 @@
   const shareStatus = document.querySelector(".share-status");
   const weaponMaster = document.querySelector('[data-category="weapon"]');
   const weaponOptions = document.querySelector("[data-weapon-options]");
-  const pageSize = 100;
+  const initialResultLimit = 100;
   const searchDelay = 250;
   let items = [];
   let filteredItems = [];
-  let visibleCount = pageSize;
+  let showAllResults = false;
+  let isDefaultResults = false;
   let hasSearch = false;
   let searchTimer;
 
@@ -426,7 +428,7 @@
     }
   }
 
-  function renderResultGroups(shownItems, isDefault, collapsedGroups = new Set()) {
+  function renderResultGroups(shownItems, isDefault) {
     resultsList.replaceChildren();
 
     const groups = new Map();
@@ -447,7 +449,7 @@
       const section = document.createElement("details");
       section.className = "result-group";
       section.dataset.group = group;
-      section.open = !collapsedGroups.has(group);
+      section.open = true;
 
       const heading = document.createElement("summary");
       heading.textContent = `${group} (${groupCounts.get(group)})`;
@@ -462,15 +464,23 @@
   }
 
   function render() {
+    showAllResults = false;
     const { results, isDefault } = filterItems();
+    isDefaultResults = isDefault;
     filteredItems = sortItems(results);
-    visibleCount = pageSize;
-    const shown = filteredItems.slice(0, visibleCount);
-    renderResultGroups(shown, isDefault);
+    renderCurrentResults();
+  }
 
-    resultCount.textContent = `${filteredItems.length.toLocaleString()} item${filteredItems.length === 1 ? "" : "s"} found${shown.length < filteredItems.length ? ` · showing ${shown.length.toLocaleString()}` : ""}`;
+  function renderCurrentResults() {
+    const displayedItems = showAllResults ? filteredItems : filteredItems.slice(0, initialResultLimit);
+    renderResultGroups(displayedItems, isDefaultResults);
+    resultCount.textContent = `${filteredItems.length.toLocaleString()} item${filteredItems.length === 1 ? "" : "s"} found`;
     noResults.hidden = filteredItems.length !== 0;
-    loadMore.hidden = shown.length >= filteredItems.length;
+    const remaining = filteredItems.length - displayedItems.length;
+    loadAllContainer.hidden = remaining <= 0;
+    if (remaining > 0) {
+      loadAllButton.textContent = `Load all ${remaining.toLocaleString()} remaining results`;
+    }
   }
 
   async function loadData() {
@@ -511,6 +521,10 @@
     updateUrl();
     render();
   });
+  loadAllButton.addEventListener("click", () => {
+    showAllResults = true;
+    renderCurrentResults();
+  });
   shareButton.addEventListener("click", async () => {
     updateUrl();
     try {
@@ -526,22 +540,6 @@
     updateWeaponControls();
     updateTypeControls();
     render();
-  });
-  loadMore.addEventListener("click", () => {
-    visibleCount += pageSize;
-    const collapsedGroups = new Set(
-      [...resultsList.querySelectorAll(".result-group:not([open])")].map(group => group.dataset.group)
-    );
-    const shownItems = filteredItems.slice(0, visibleCount);
-    const filters = getCurrentFilters();
-    const isDefault = !hasSearch && filters.categories.length === 0
-      && filters.stats.length === 0
-      && !hasClassLevels(filters.levels)
-      && triStateFilters.filter(filter => filter !== "hidden")
-        .every(filter => filters.triStates[filter] === "any");
-    renderResultGroups(shownItems, isDefault, collapsedGroups);
-    resultCount.textContent = `${filteredItems.length.toLocaleString()} items found · showing ${shownItems.length.toLocaleString()}`;
-    loadMore.hidden = shownItems.length >= filteredItems.length;
   });
   form.addEventListener("reset", () => {
     clearTimeout(searchTimer);

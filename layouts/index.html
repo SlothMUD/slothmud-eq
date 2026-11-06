@@ -7,8 +7,8 @@
         <div class="search-actions">
           <button class="primary-button" type="submit">Find</button>
           <button type="reset" class="reset-button">Reset</button>
-          <a class="download-button" href="{{ .Site.Params.dataPath | relURL }}" download="slothmud-eq-items.json">Download .json</a>
           <button type="button" class="share-button">Copy link</button>
+          <a class="download-button" href="{{ .Site.Params.dataPath | relURL }}" download="slothmud-eq-items.json">Download .json</a>
         </div>
         <span class="share-status" aria-live="polite"></span>
       </div>
@@ -185,16 +185,18 @@
           <span>Sort</span>
           <div class="segment-control sort-segments" role="radiogroup" aria-label="Sort results">
             <label><input type="radio" name="sort" value="ac" checked><span>AC</span></label>
-            <label><input type="radio" name="sort" value="dam"><span>Damage</span></label>
-            <label><input type="radio" name="sort" value="mana"><span>Mana</span></label>
-            <label><input type="radio" name="sort" value="mr"><span>Mana Regen</span></label>
+            <label><input type="radio" name="sort" value="dam"><span>DAM</span></label>
+            <label><input type="radio" name="sort" value="mana"><span>MA</span></label>
+            <label><input type="radio" name="sort" value="mr"><span>MR</span></label>
             <label><input type="radio" name="sort" value="name"><span>Name</span></label>
           </div>
         </div>
       </div>
       <div id="results-list"></div>
+      <div id="load-all-container" class="load-all-container" hidden>
+        <button id="load-all-results" class="load-all-button" type="button"></button>
+      </div>
       <p id="no-results" class="no-results" hidden>No items match these filters.</p>
-      <button id="load-more" class="load-more" type="button" hidden>Load more</button>
       <p id="load-error" class="load-error" role="alert" hidden></p>
     </section>
     <p class="eq-data-note">Static snapshot of SlothMUD EQ data. Search includes exported item fields and linked mob/area names where available.</p>
