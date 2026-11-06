@@ -46,33 +46,44 @@
               </div>
             </div>
           </div>
-          <div class="choice-grid equipment-grid">
-            <label><input type="checkbox" data-category="light"><span>Light</span></label>
-            <label><input type="checkbox" data-category="finger"><span>Finger</span></label>
-            <label><input type="checkbox" data-category="neck"><span>Neck</span></label>
-            <label><input type="checkbox" data-category="body"><span>Body</span></label>
-            <label><input type="checkbox" data-category="head"><span>Head</span></label>
-            <label><input type="checkbox" data-category="legs"><span>Legs</span></label>
-            <label><input type="checkbox" data-category="feet"><span>Feet</span></label>
-            <label><input type="checkbox" data-category="hands"><span>Hands</span></label>
-            <label><input type="checkbox" data-category="arms"><span>Arms</span></label>
-            <label><input type="checkbox" data-category="shield"><span>Shield</span></label>
-            <label><input type="checkbox" data-category="robe"><span>Robe</span></label>
-            <label><input type="checkbox" data-category="waist"><span>Waist</span></label>
-            <label><input type="checkbox" data-category="wrist"><span>Wrist</span></label>
-            <label><input type="checkbox" data-category="held"><span>Held</span></label>
-            <label><input type="checkbox" data-category="instrument"><span>Instrument</span></label>
-            <label><input type="checkbox" data-category="book"><span>Books</span></label>
-            <label><input type="checkbox" data-category="clasp"><span>Clasps</span></label>
-            <label><input type="checkbox" data-category="rune"><span>Runes</span></label>
-            <label><input type="checkbox" data-category="potion"><span>Potions</span></label>
-            <label><input type="checkbox" data-category="container"><span>Containers</span></label>
-            <label><input type="checkbox" data-category="liquid"><span>Liquid</span></label>
-            <label><input type="checkbox" data-category="scroll"><span>Scrolls</span></label>
-            <label><input type="checkbox" data-category="wand"><span>Wands</span></label>
-            <label><input type="checkbox" data-category="key"><span>Keys</span></label>
-            <label><input type="checkbox" data-category="note"><span>Notes</span></label>
-            <label><input type="checkbox" data-category="treasure"><span>Treasures</span></label>
+          <div class="equipment-columns">
+            <section class="equipment-section">
+              <h3>Worn equipment</h3>
+              <div class="choice-grid equipment-grid worn-equipment-grid">
+                <label><input type="checkbox" data-category="light"><span>Light</span></label>
+                <label><input type="checkbox" data-category="finger"><span>Finger</span></label>
+                <label><input type="checkbox" data-category="neck"><span>Neck</span></label>
+                <label><input type="checkbox" data-category="body"><span>Body</span></label>
+                <label><input type="checkbox" data-category="head"><span>Head</span></label>
+                <label><input type="checkbox" data-category="legs"><span>Legs</span></label>
+                <label><input type="checkbox" data-category="feet"><span>Feet</span></label>
+                <label><input type="checkbox" data-category="hands"><span>Hands</span></label>
+                <label><input type="checkbox" data-category="arms"><span>Arms</span></label>
+                <label><input type="checkbox" data-category="shield"><span>Shield</span></label>
+                <label><input type="checkbox" data-category="robe"><span>About</span></label>
+                <label><input type="checkbox" data-category="waist"><span>Waist</span></label>
+                <label><input type="checkbox" data-category="wrist"><span>Wrist</span></label>
+                <label><input type="checkbox" data-category="held"><span>Held</span></label>
+                <label><input type="checkbox" data-category="ammo"><span>Ammo</span></label>
+                <label><input type="checkbox" data-category="instrument"><span>Instrument</span></label>
+              </div>
+            </section>
+            <section class="equipment-section">
+              <h3>Other types</h3>
+              <div class="choice-grid equipment-grid misc-equipment-grid">
+                <label><input type="checkbox" data-category="book"><span>Books</span></label>
+                <label><input type="checkbox" data-category="clasp"><span>Clasps</span></label>
+                <label><input type="checkbox" data-category="rune"><span>Runes</span></label>
+                <label><input type="checkbox" data-category="potion"><span>Potions</span></label>
+                <label><input type="checkbox" data-category="container"><span>Containers</span></label>
+                <label><input type="checkbox" data-category="liquid"><span>Liquid</span></label>
+                <label><input type="checkbox" data-category="scroll"><span>Scrolls</span></label>
+                <label><input type="checkbox" data-category="wand"><span>Wands</span></label>
+                <label><input type="checkbox" data-category="key"><span>Keys</span></label>
+                <label><input type="checkbox" data-category="note"><span>Notes</span></label>
+                <label><input type="checkbox" data-category="treasure"><span>Treasures</span></label>
+              </div>
+            </section>
           </div>
         </div>
         </div>
@@ -188,14 +199,10 @@
             <label><input type="radio" name="sort" value="dam"><span>DAM</span></label>
             <label><input type="radio" name="sort" value="mana"><span>MA</span></label>
             <label><input type="radio" name="sort" value="mr"><span>MR</span></label>
-            <label><input type="radio" name="sort" value="name"><span>Name</span></label>
           </div>
         </div>
       </div>
       <div id="results-list"></div>
-      <div id="load-all-container" class="load-all-container" hidden>
-        <button id="load-all-results" class="load-all-button" type="button"></button>
-      </div>
       <p id="no-results" class="no-results" hidden>No items match these filters.</p>
       <p id="load-error" class="load-error" role="alert" hidden></p>
     </section>
