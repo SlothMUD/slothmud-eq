@@ -1,86 +1,20 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Search SlothMUD equipment, weapons, restrictions, and item stats.">
-  <title>{{ .Site.Title }}</title>
-  <link rel="stylesheet" href="{{ "css/style.css" | relURL }}">
-  <script src="{{ "js/app.js" | relURL }}" defer></script>
-</head>
-<body>
-  <header class="site-header">
-    <div class="brand">
-      <div class="brand-mark" aria-hidden="true">S</div>
-      <div>
-        <h1>SlothMUD EQ Search</h1>
-        <p>Equipment reference</p>
-      </div>
-    </div>
-    <span class="static-badge">STATIC PREVIEW</span>
-  </header>
-
-  <main id="eq-app" data-items-url="{{ "data/items.json" | relURL }}">
-    <section class="intro">
-      <div>
-        <p class="eyebrow">SlothMUD equipment database</p>
-        <h2>Find your next piece of gear.</h2>
-        <p>Search item details or combine equipment, class-level, stat, and flag filters.</p>
-      </div>
-      <a class="source-link" href="https://slothmud.org/" target="_blank" rel="noreferrer">SlothMUD home <span aria-hidden="true">↗</span></a>
-    </section>
-
+{{ define "main" }}
+  <div id="eq-app" class="eq-search-page" data-items-url="{{ .Site.Params.dataPath | relURL }}">
     <form id="filters" class="filters">
-      <div class="filter-heading">
-        <h2>Filters</h2>
-        <button type="reset" class="text-button">Reset all</button>
+      <div class="search-row">
+        <label for="search">Search items</label>
+        <input id="search" type="search" autocomplete="off" placeholder="Name, keyword, VNUM, stat, or flag">
+        <div class="search-actions">
+          <button class="primary-button" type="submit">Find</button>
+          <button type="reset" class="reset-button">Reset</button>
+          <button type="button" class="share-button">Copy link</button>
+        </div>
+        <span class="share-status" aria-live="polite"></span>
       </div>
 
-      <fieldset>
-        <legend>Equipment</legend>
-        <div class="choice-grid equipment-grid">
-          <label><input type="checkbox" data-category="weapon"><span>Weapons</span></label>
-          <label><input type="checkbox" data-category="light"><span>Light</span></label>
-          <label><input type="checkbox" data-category="finger"><span>Finger</span></label>
-          <label><input type="checkbox" data-category="neck"><span>Neck</span></label>
-          <label><input type="checkbox" data-category="body"><span>Body</span></label>
-          <label><input type="checkbox" data-category="head"><span>Head</span></label>
-          <label><input type="checkbox" data-category="legs"><span>Legs</span></label>
-          <label><input type="checkbox" data-category="feet"><span>Feet</span></label>
-          <label><input type="checkbox" data-category="hands"><span>Hands</span></label>
-          <label><input type="checkbox" data-category="arms"><span>Arms</span></label>
-          <label><input type="checkbox" data-category="shield"><span>Shield</span></label>
-          <label><input type="checkbox" data-category="robe"><span>Robe</span></label>
-          <label><input type="checkbox" data-category="waist"><span>Waist</span></label>
-          <label><input type="checkbox" data-category="wrist"><span>Wrist</span></label>
-          <label><input type="checkbox" data-category="held"><span>Held</span></label>
-          <label><input type="checkbox" data-category="instrument"><span>Instrument</span></label>
-          <label><input type="checkbox" data-category="book"><span>Books</span></label>
-          <label><input type="checkbox" data-category="clasp"><span>Clasps</span></label>
-          <label><input type="checkbox" data-category="rune"><span>Runes</span></label>
-          <label><input type="checkbox" data-category="potion"><span>Potions</span></label>
-          <label><input type="checkbox" data-category="container"><span>Containers</span></label>
-          <label><input type="checkbox" data-category="liquid"><span>Liquid</span></label>
-          <label><input type="checkbox" data-category="scroll"><span>Scrolls</span></label>
-          <label><input type="checkbox" data-category="wand"><span>Wands</span></label>
-          <label><input type="checkbox" data-category="key"><span>Keys</span></label>
-          <label><input type="checkbox" data-category="note"><span>Notes</span></label>
-          <label><input type="checkbox" data-category="treasure"><span>Treasures</span></label>
-        </div>
-        <div class="weapon-options">
-          <span class="field-label">Weapon subtype</span>
-          <div class="choice-row">
-            <label><input type="checkbox" data-weapon-subtype="1 Handed Weapons" checked><span>1-handed</span></label>
-            <label><input type="checkbox" data-weapon-subtype="2 Handed Weapons" checked><span>2-handed</span></label>
-            <label><input type="checkbox" data-weapon-subtype="Fire Weapons" checked><span>Fire</span></label>
-            <label><input type="checkbox" data-weapon-subtype="Throw-only Weapons" checked><span>Throw-only</span></label>
-          </div>
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend>Class levels</legend>
-        <p class="field-help">Enter one or more levels. Each entered class must meet that item's restriction.</p>
+      <details class="filter-group class-level-filter" open>
+        <summary>Class levels</summary>
+        <div class="filter-group-content">
         <div class="level-grid">
           <label>Wa<input inputmode="numeric" pattern="[0-9]*" type="number" min="0" max="99" data-level="Wa"></label>
           <label>Th<input inputmode="numeric" pattern="[0-9]*" type="number" min="0" max="99" data-level="Th"></label>
@@ -92,11 +26,61 @@
           <label>Ne<input inputmode="numeric" pattern="[0-9]*" type="number" min="0" max="99" data-level="Ne"></label>
           <label>Av<input inputmode="numeric" pattern="[0-9]*" type="number" min="0" max="99" data-level="Av"></label>
         </div>
-      </fieldset>
+        </div>
+      </details>
 
-      <fieldset>
-        <legend>Stats</legend>
-        <div class="choice-grid stats-grid">
+      <details class="filter-group equipment-filter" open>
+        <summary>Type</summary>
+        <div class="filter-group-content">
+        <div class="equipment-layout">
+          <div class="weapon-panel">
+            <label class="weapon-master"><input type="checkbox" data-category="weapon"><span>Weapons</span></label>
+            <div class="weapon-options" data-weapon-options>
+              <span class="field-label">Subtype</span>
+              <div class="choice-row">
+                <label><input type="checkbox" data-weapon-subtype="1 Handed Weapons" checked><span>1-handed</span></label>
+                <label><input type="checkbox" data-weapon-subtype="2 Handed Weapons" checked><span>2-handed</span></label>
+                <label><input type="checkbox" data-weapon-subtype="Fire Weapons" checked><span>Fire</span></label>
+                <label><input type="checkbox" data-weapon-subtype="Throw-only Weapons" checked><span>Throw-only</span></label>
+              </div>
+            </div>
+          </div>
+          <div class="choice-grid equipment-grid">
+            <label><input type="checkbox" data-category="light"><span>Light</span></label>
+            <label><input type="checkbox" data-category="finger"><span>Finger</span></label>
+            <label><input type="checkbox" data-category="neck"><span>Neck</span></label>
+            <label><input type="checkbox" data-category="body"><span>Body</span></label>
+            <label><input type="checkbox" data-category="head"><span>Head</span></label>
+            <label><input type="checkbox" data-category="legs"><span>Legs</span></label>
+            <label><input type="checkbox" data-category="feet"><span>Feet</span></label>
+            <label><input type="checkbox" data-category="hands"><span>Hands</span></label>
+            <label><input type="checkbox" data-category="arms"><span>Arms</span></label>
+            <label><input type="checkbox" data-category="shield"><span>Shield</span></label>
+            <label><input type="checkbox" data-category="robe"><span>Robe</span></label>
+            <label><input type="checkbox" data-category="waist"><span>Waist</span></label>
+            <label><input type="checkbox" data-category="wrist"><span>Wrist</span></label>
+            <label><input type="checkbox" data-category="held"><span>Held</span></label>
+            <label><input type="checkbox" data-category="instrument"><span>Instrument</span></label>
+            <label><input type="checkbox" data-category="book"><span>Books</span></label>
+            <label><input type="checkbox" data-category="clasp"><span>Clasps</span></label>
+            <label><input type="checkbox" data-category="rune"><span>Runes</span></label>
+            <label><input type="checkbox" data-category="potion"><span>Potions</span></label>
+            <label><input type="checkbox" data-category="container"><span>Containers</span></label>
+            <label><input type="checkbox" data-category="liquid"><span>Liquid</span></label>
+            <label><input type="checkbox" data-category="scroll"><span>Scrolls</span></label>
+            <label><input type="checkbox" data-category="wand"><span>Wands</span></label>
+            <label><input type="checkbox" data-category="key"><span>Keys</span></label>
+            <label><input type="checkbox" data-category="note"><span>Notes</span></label>
+            <label><input type="checkbox" data-category="treasure"><span>Treasures</span></label>
+          </div>
+        </div>
+        </div>
+      </details>
+
+      <details class="filter-group stats-filter">
+        <summary>Stats</summary>
+        <div class="filter-group-content">
+          <div class="choice-grid stats-grid">
           <label><input type="checkbox" data-stat="Mp"><span>Mana</span></label>
           <label><input type="checkbox" data-stat="Mr"><span>Mana regen</span></label>
           <label><input type="checkbox" data-stat="Hp"><span>HP</span></label>
@@ -128,27 +112,66 @@
           <label><input type="checkbox" data-stat="ReduceDam"><span>Reduce damage</span></label>
           <label><input type="checkbox" data-stat="SpellSaves"><span>Spell saves</span></label>
           <label><input type="checkbox" data-stat="WaterBreathing"><span>Water breathing</span></label>
+          </div>
         </div>
-      </fieldset>
+      </details>
 
-      <fieldset>
-        <legend>Item flags</legend>
+      <details class="filter-group item-flags-filter" open>
+        <summary>Flags</summary>
+        <div class="filter-group-content">
         <div class="tri-grid">
-          <label>Forge<select data-tristate="forge"><option value="any">Any</option><option value="yes">Yes</option><option value="no">No</option></select></label>
-          <label>Personal<select data-tristate="personal"><option value="any">Any</option><option value="yes">Yes</option><option value="no">No</option></select></label>
-          <label>Shapeshift<select data-tristate="shapeshift"><option value="any">Any</option><option value="yes">Yes</option><option value="no">No</option></select></label>
-          <label>Temporary<select data-tristate="temporary"><option value="any">Any</option><option value="yes">Yes</option><option value="no">No</option></select></label>
-          <label>Drachma<select data-tristate="drachma"><option value="any">Any</option><option value="yes">Yes</option><option value="no">No</option></select></label>
-          <label class="include-hidden"><span>Include hidden</span><input type="checkbox" data-include-hidden></label>
+          <div class="tri-filter" data-tristate="forge">
+            <span class="tri-label">Forge</span>
+            <div class="segment-control" role="group" aria-label="Forge filter">
+              <label><input type="radio" name="filter-forge" value="any" checked><span>Any</span></label>
+              <label><input type="radio" name="filter-forge" value="yes"><span>Yes</span></label>
+              <label><input type="radio" name="filter-forge" value="no"><span>No</span></label>
+            </div>
+          </div>
+          <div class="tri-filter" data-tristate="personal">
+            <span class="tri-label">Personal</span>
+            <div class="segment-control" role="group" aria-label="Personal filter">
+              <label><input type="radio" name="filter-personal" value="any" checked><span>Any</span></label>
+              <label><input type="radio" name="filter-personal" value="yes"><span>Yes</span></label>
+              <label><input type="radio" name="filter-personal" value="no"><span>No</span></label>
+            </div>
+          </div>
+          <div class="tri-filter" data-tristate="shapeshift">
+            <span class="tri-label">Shapeshift</span>
+            <div class="segment-control" role="group" aria-label="Shapeshift filter">
+              <label><input type="radio" name="filter-shapeshift" value="any" checked><span>Any</span></label>
+              <label><input type="radio" name="filter-shapeshift" value="yes"><span>Yes</span></label>
+              <label><input type="radio" name="filter-shapeshift" value="no"><span>No</span></label>
+            </div>
+          </div>
+          <div class="tri-filter" data-tristate="temporary">
+            <span class="tri-label">Temporary</span>
+            <div class="segment-control" role="group" aria-label="Temporary filter">
+              <label><input type="radio" name="filter-temporary" value="any" checked><span>Any</span></label>
+              <label><input type="radio" name="filter-temporary" value="yes"><span>Yes</span></label>
+              <label><input type="radio" name="filter-temporary" value="no"><span>No</span></label>
+            </div>
+          </div>
+          <div class="tri-filter" data-tristate="drachma">
+            <span class="tri-label">Drachma</span>
+            <div class="segment-control" role="group" aria-label="Drachma filter">
+              <label><input type="radio" name="filter-drachma" value="any" checked><span>Any</span></label>
+              <label><input type="radio" name="filter-drachma" value="yes"><span>Yes</span></label>
+              <label><input type="radio" name="filter-drachma" value="no"><span>No</span></label>
+            </div>
+          </div>
+          <div class="tri-filter" data-tristate="hidden">
+            <span class="tri-label">Hidden</span>
+            <div class="segment-control" role="group" aria-label="Hidden item filter">
+              <label><input type="radio" name="filter-hidden" value="any"><span>Any</span></label>
+              <label><input type="radio" name="filter-hidden" value="yes"><span>Yes</span></label>
+              <label><input type="radio" name="filter-hidden" value="no" checked><span>No</span></label>
+            </div>
+          </div>
         </div>
-      </fieldset>
+        </div>
+      </details>
 
-      <div class="search-row">
-        <label for="search">Search items</label>
-        <input id="search" type="search" autocomplete="off" placeholder="Name, keyword, VNUM, stat, or flag">
-        <button class="primary-button" type="submit">Find</button>
-      </div>
-      <p class="search-help">A text search takes precedence over the other filters, matching the current EQ search. Use <code>%</code> to match all items.</p>
     </form>
 
     <section class="results" aria-live="polite">
@@ -157,24 +180,23 @@
           <h2>Results</h2>
           <p id="result-count" class="result-count">Loading item data…</p>
         </div>
-        <label class="sort-control">Sort
-          <select id="sort">
-            <option value="relevance">Default</option>
-            <option value="name">Name</option>
-            <option value="vnum">VNUM</option>
-            <option value="date">Date added</option>
-          </select>
-        </label>
+        <div class="sort-control">
+          <span>Sort</span>
+          <div class="segment-control sort-segments" role="radiogroup" aria-label="Sort results">
+            <label><input type="radio" name="sort" value="ac" checked><span>AC</span></label>
+            <label><input type="radio" name="sort" value="dam"><span>Damage</span></label>
+            <label><input type="radio" name="sort" value="mana"><span>Mana</span></label>
+            <label><input type="radio" name="sort" value="mr"><span>Mana Regen</span></label>
+            <label><input type="radio" name="sort" value="name"><span>Name</span></label>
+          </div>
+        </div>
       </div>
       <div id="results-list"></div>
       <p id="no-results" class="no-results" hidden>No items match these filters.</p>
       <button id="load-more" class="load-more" type="button" hidden>Load more</button>
       <p id="load-error" class="load-error" role="alert" hidden></p>
     </section>
-  </main>
-
-  <footer>
-    <p>Static snapshot of SlothMUD EQ data. Search includes exported item fields and linked mob/area names where available.</p>
-  </footer>
-</body>
-</html>
+    <p class="eq-data-note">Static snapshot of SlothMUD EQ data. Search includes exported item fields and linked mob/area names where available.</p>
+  </div>
+  <script src="{{ "js/app.js" | relURL }}" defer></script>
+{{ end }}

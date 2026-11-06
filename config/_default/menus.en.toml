@@ -1,0 +1,48 @@
+[[main]]
+none = "none"
+
+[[main]]
+name = "Equipment"
+url = "https://eq.slothmud.net"
+identifier = "tja1aQHX0F"
+weight = 2
+
+[[main]]
+name = "Live"
+url = "https://live.slothmud.net"
+identifier = "E8MYGAT9ZF"
+weight = 1
+
+[[main]]
+name = "Maps"
+url = "https://maps.slothmud.net"
+identifier = "zbdAgZvZFw"
+weight = 3
+
+[[main]]
+name = "Quests"
+url = "https://quests.slothmud.net"
+identifier = "1uetG4VHV5"
+weight = 4
+
+[[main]]
+name = "Docs"
+url = "https://docs.slothmud.net"
+identifier = "PT5PCi3YVL"
+weight = 5
+
+[[main]]
+name = "Discord"
+pre = "discord"
+url = "https://discord.com/channels/661920014374404097/661920014374404100"
+identifier = "aQfWzFM871"
+weight = 7
+
+[[main]]
+name = "Forum"
+url = "https://forum.slothmud.net"
+identifier = "WSiy0ecgvt"
+weight = 6
+
+[[footer]]
+none = "none"

@@ -7,12 +7,18 @@
   const loadMore = document.querySelector("#load-more");
   const loadError = document.querySelector("#load-error");
   const searchInput = document.querySelector("#search");
-  const sortSelect = document.querySelector("#sort");
+  const sortControl = document.querySelector(".sort-segments");
+  const shareButton = document.querySelector(".share-button");
+  const shareStatus = document.querySelector(".share-status");
+  const weaponMaster = document.querySelector('[data-category="weapon"]');
+  const weaponOptions = document.querySelector("[data-weapon-options]");
   const pageSize = 100;
+  const searchDelay = 250;
   let items = [];
   let filteredItems = [];
   let visibleCount = pageSize;
   let hasSearch = false;
+  let searchTimer;
 
   const categoryMatches = {
     weapon: item => item.group === "1 Handed Weapons"
@@ -53,7 +59,14 @@
     WaterBreathing: ["WaterBreathing"]
   };
   const classLevels = ["Th", "Ma", "Cl", "Dr", "Mo", "Ba", "Ne", "Wa"];
-  const hiddenIncludedByDefault = false;
+  const weaponSubtypeCodes = new Map([
+    ["1 Handed Weapons", "1h"],
+    ["2 Handed Weapons", "2h"],
+    ["Fire Weapons", "fire"],
+    ["Throw-only Weapons", "throw"]
+  ]);
+  const weaponSubtypeNames = new Map([...weaponSubtypeCodes].map(([name, code]) => [code, name]));
+  const triStateFilters = ["forge", "personal", "shapeshift", "temporary", "drachma", "hidden"];
 
   function flatten(value) {
     if (value === null || value === undefined) return "";
@@ -143,6 +156,8 @@
       matches = itemFlags.includes("CAN-SHAPESHIFT");
     } else if (filter === "temporary") {
       matches = itemFlags.includes("TEMPORARY");
+    } else if (filter === "hidden") {
+      matches = Boolean(item.hidden);
     } else {
       matches = /\bDrachma\s*\[\s*[1-9]\d*\s*\]/i.test(item.stats || "");
     }
@@ -160,8 +175,8 @@
       levels[input.dataset.level] = input.value === "" ? null : Number(input.value);
     }
     const triStates = {};
-    for (const select of document.querySelectorAll("[data-tristate]")) {
-      triStates[select.dataset.tristate] = select.value;
+    for (const filter of document.querySelectorAll("[data-tristate]")) {
+      triStates[filter.dataset.tristate] = filter.querySelector("input:checked").value;
     }
     return {
       categories: selectedValues("[data-category]"),
@@ -169,19 +184,97 @@
       stats: selectedValues("[data-stat]"),
       levels,
       triStates,
-      includeHidden: document.querySelector("[data-include-hidden]").checked || hiddenIncludedByDefault,
       query: searchInput.value.trim()
     };
+  }
+
+  function updateUrl() {
+    const filters = getCurrentFilters();
+    const params = new URLSearchParams();
+    if (filters.query) params.set("q", filters.query);
+    for (const category of filters.categories) params.append("cat", category);
+    if (filters.categories.includes("weapon")) {
+      for (const subtype of filters.weaponSubtypes) {
+        const code = weaponSubtypeCodes.get(subtype);
+        if (code) params.append("sub", code);
+      }
+    }
+    for (const stat of filters.stats) params.append("stat", stat);
+    for (const [className, level] of Object.entries(filters.levels)) {
+      if (level !== null) params.set(className, String(level));
+    }
+    for (const filter of triStateFilters) {
+      if (filter === "hidden") {
+        if (filters.triStates.hidden === "yes" || filters.triStates.hidden === "any") {
+          params.set("hidden", filters.triStates.hidden);
+        }
+      } else if (filters.triStates[filter] !== "any") {
+        params.set(filter, filters.triStates[filter]);
+      }
+    }
+    const sort = sortControl.querySelector("input:checked").value;
+    if (sort !== "ac") params.set("sort", sort);
+
+    const url = new URL(location.href);
+    url.search = params.toString();
+    history.replaceState(null, "", url);
+  }
+
+  function applyUrlState() {
+    const params = new URLSearchParams(location.search);
+    searchInput.value = params.get("q") || "";
+
+    const categories = new Set(params.getAll("cat"));
+    for (const input of document.querySelectorAll("[data-category]")) {
+      input.checked = categories.has(input.dataset.category);
+    }
+
+    if (params.has("sub") || categories.has("weapon")) {
+      const subtypes = new Set(params.getAll("sub").map(code => weaponSubtypeNames.get(code)).filter(Boolean));
+      for (const input of document.querySelectorAll("[data-weapon-subtype]")) {
+        input.checked = subtypes.has(input.dataset.weaponSubtype);
+      }
+    }
+
+    const stats = new Set(params.getAll("stat"));
+    for (const input of document.querySelectorAll("[data-stat]")) {
+      input.checked = stats.has(input.dataset.stat);
+    }
+
+    for (const input of document.querySelectorAll("[data-level]")) {
+      const value = params.get(input.dataset.level);
+      input.value = value !== null && /^\d{1,2}$/.test(value) && Number(value) <= 99 ? value : "";
+    }
+
+    for (const filter of triStateFilters.filter(name => name !== "hidden")) {
+      const value = params.get(filter);
+      if (value === "yes" || value === "no") {
+        const input = document.querySelector(`[data-tristate="${filter}"] input[value="${value}"]`);
+        if (input) input.checked = true;
+      }
+    }
+
+    const hiddenValue = params.get("hidden");
+    const hiddenState = hiddenValue === "1" ? "any" : hiddenValue;
+    if (hiddenState === "any" || hiddenState === "yes" || hiddenState === "no") {
+      document.querySelector(`[data-tristate="hidden"] input[value="${hiddenState}"]`).checked = true;
+    }
+    const sort = params.get("sort");
+    const sortInput = sortControl.querySelector(`input[value="${sort}"]`);
+    if (sortInput) sortInput.checked = true;
+    if (stats.size) document.querySelector(".stats-filter").open = true;
   }
 
   function filterItems() {
     const filters = getCurrentFilters();
     hasSearch = filters.query.length > 0;
-    let visibleItems = items.filter(item => filters.includeHidden || !item.hidden);
+    const hiddenState = filters.triStates.hidden;
+    let visibleItems = hiddenState === "any"
+      ? items
+      : items.filter(item => Boolean(item.hidden) === (hiddenState === "yes"));
 
     if (hasSearch) {
       visibleItems = visibleItems.filter(item => matchesTextSearch(item, filters.query));
-      return { results: visibleItems, isDefault: false };
     }
 
     const selectedCategories = filters.categories;
@@ -205,29 +298,55 @@
     }
 
     for (const [filter, state] of Object.entries(filters.triStates)) {
-      if (state !== "any") visibleItems = visibleItems.filter(item => matchesTriState(item, filter, state));
+      if (filter !== "hidden" && state !== "any") {
+        visibleItems = visibleItems.filter(item => matchesTriState(item, filter, state));
+      }
     }
 
-    const isDefault = selectedCategories.length === 0
+    const isDefault = !hasSearch
+      && selectedCategories.length === 0
       && filters.stats.length === 0
       && !hasClassLevels(filters.levels)
-      && Object.values(filters.triStates).every(state => state === "any");
+      && triStateFilters.filter(filter => filter !== "hidden")
+        .every(filter => filters.triStates[filter] === "any");
     return { results: visibleItems, isDefault };
   }
 
-  function parseDate(value) {
-    const timestamp = Date.parse(value || "");
-    return Number.isNaN(timestamp) ? 0 : timestamp;
+  function statValue(item, stat) {
+    const match = (item.stats || "").match(new RegExp(`(?:^|,\\s*)${stat}\\s+(-?\\d+(?:\\.\\d+)?)`, "i"));
+    return match ? Number(match[1]) : 0;
   }
 
-  function sortItems(result, isDefault) {
-    const mode = sortSelect.value;
-    if (mode === "name") return result.sort((a, b) => a.name.localeCompare(b.name));
-    if (mode === "vnum") return result.sort((a, b) => Number(a.vnum) - Number(b.vnum));
-    if (mode === "date" || (mode === "relevance" && isDefault)) {
-      return result.sort((a, b) => parseDate(b.dateadded) - parseDate(a.dateadded) || Number(b.vnum) - Number(a.vnum));
+  function weaponDamage(item, averageDice = true) {
+    const match = (item.weaponDice || "").match(/(\d+)d(\d+)\s+[+-]?\d+\s+([+-]?\d+)/i);
+    if (match) {
+      const dice = Number(match[1]);
+      const sides = Number(match[2]);
+      return dice * (averageDice ? (sides + 1) / 2 : sides) + Number(match[3]);
     }
-    return result;
+    return statValue(item, "Dam");
+  }
+
+  function sortItems(result) {
+    const mode = sortControl.querySelector("input:checked").value;
+    if (mode === "name") return result.sort((a, b) => a.name.localeCompare(b.name));
+    const metric = {
+      ac: item => Number(item.ac) || 0,
+      dam: item => weaponDamage(item, 1),
+      mana: item => statValue(item, "Mp") + statValue(item, "MaxInt") * 15,
+      mr: item => statValue(item, "Mr") + statValue(item, "MaxWis")
+    }[mode];
+    if (!metric) return result;
+
+    return result.sort((a, b) => {
+      const primary = metric(a) - metric(b);
+      if (primary !== 0) return mode === "ac" ? primary : -primary;
+      if (mode !== "ac") {
+        const armorClass = (Number(a.ac) || 0) - (Number(b.ac) || 0);
+        if (armorClass !== 0) return armorClass;
+      }
+      return weaponDamage(b, false) - weaponDamage(a, false) || a.name.localeCompare(b.name);
+    });
   }
 
   function appendDetail(list, label, value) {
@@ -290,9 +409,26 @@
     return article;
   }
 
+  function updateWeaponControls() {
+    const enabled = weaponMaster.checked;
+    weaponOptions.classList.toggle("is-disabled", !enabled);
+    weaponOptions.setAttribute("aria-disabled", String(!enabled));
+    for (const input of weaponOptions.querySelectorAll("input")) {
+      input.disabled = !enabled;
+    }
+  }
+
+  function updateTypeControls() {
+    const categories = [...document.querySelectorAll(".equipment-filter [data-category]")];
+    const hasSelection = categories.some(input => input.checked);
+    for (const input of categories) {
+      input.closest("label").classList.toggle("is-unselected", hasSelection && !input.checked);
+    }
+  }
+
   function render() {
     const { results, isDefault } = filterItems();
-    filteredItems = sortItems(results, isDefault);
+    filteredItems = sortItems(results);
     visibleCount = pageSize;
     const shown = filteredItems.slice(0, visibleCount);
     resultsList.replaceChildren();
@@ -303,6 +439,7 @@
       if (!groups.has(group)) groups.set(group, []);
       groups.get(group).push(item);
     }
+
     for (const [group, groupItems] of groups) {
       const section = document.createElement("section");
       section.className = "result-group";
@@ -335,11 +472,43 @@
 
   form.addEventListener("submit", event => {
     event.preventDefault();
+    clearTimeout(searchTimer);
+    updateUrl();
     render();
   });
-  form.addEventListener("change", render);
-  searchInput.addEventListener("input", render);
-  sortSelect.addEventListener("change", render);
+  form.addEventListener("change", event => {
+    if (event.target === weaponMaster) updateWeaponControls();
+    if (event.target.matches("[data-category]")) updateTypeControls();
+    updateUrl();
+    render();
+  });
+  searchInput.addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      updateUrl();
+      render();
+    }, searchDelay);
+  });
+  sortControl.addEventListener("change", () => {
+    updateUrl();
+    render();
+  });
+  shareButton.addEventListener("click", async () => {
+    updateUrl();
+    try {
+      await navigator.clipboard.writeText(location.href);
+      shareStatus.textContent = "Link copied to clipboard.";
+    } catch (error) {
+      shareStatus.textContent = "Could not copy link. Copy it from the address bar.";
+    }
+  });
+  window.addEventListener("popstate", () => {
+    clearTimeout(searchTimer);
+    applyUrlState();
+    updateWeaponControls();
+    updateTypeControls();
+    render();
+  });
   loadMore.addEventListener("click", () => {
     visibleCount += pageSize;
     const previousCount = visibleCount;
@@ -349,7 +518,8 @@
     const isDefault = !hasSearch && getCurrentFilters().categories.length === 0
       && selectedValues("[data-stat]").length === 0
       && !hasClassLevels(getCurrentFilters().levels)
-      && Object.values(getCurrentFilters().triStates).every(state => state === "any");
+      && triStateFilters.filter(filter => filter !== "hidden")
+        .every(filter => getCurrentFilters().triStates[filter] === "any");
     for (const item of shownItems) {
       const group = isDefault ? "Most Recently Discovered" : (item.group || "Other");
       if (!groups.has(group)) groups.set(group, []);
@@ -368,7 +538,20 @@
     resultCount.textContent = `${filteredItems.length.toLocaleString()} items found · showing ${shownItems.length.toLocaleString()}`;
     loadMore.hidden = shownItems.length >= filteredItems.length;
   });
-  form.addEventListener("reset", () => requestAnimationFrame(render));
+  form.addEventListener("reset", () => {
+    clearTimeout(searchTimer);
+    sortControl.querySelector('input[value="ac"]').checked = true;
+    requestAnimationFrame(() => {
+      updateWeaponControls();
+      updateTypeControls();
+      updateUrl();
+      render();
+    });
+  });
 
+  applyUrlState();
+  updateWeaponControls();
+  updateTypeControls();
+  updateUrl();
   loadData();
 })();

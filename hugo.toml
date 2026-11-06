@@ -1,8 +1,0 @@
-baseURL = "https://slothmud.github.io/slothmud-eq/"
-locale = "en-US"
-title = "SlothMUD EQ Search"
-enableRobotsTXT = true
-disableKinds = ["taxonomy", "term", "RSS", "sitemap"]
-
-[params]
-  dataPath = "data/items.json"

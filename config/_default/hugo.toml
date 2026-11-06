@@ -1,0 +1,19 @@
+baseURL = "https://eq.slothmud.net/"
+title = "SlothMUD"
+locale = "en-US"
+
+# Declare the layered theme hierarchy (slothmud-theme overrides blowfish)
+theme = ["slothmud-theme", "blowfish"]
+
+[markup.goldmark.renderer]
+unsafe = true
+
+[build]
+  [build.cleanDestinationDir]
+    enable = true
+
+[outputs]
+  home = ["HTML", "RSS", "JSON"]
+
+[params]
+  dataPath = "data/items.json"

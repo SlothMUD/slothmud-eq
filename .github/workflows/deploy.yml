@@ -2,8 +2,7 @@ name: Deploy Hugo site to GitHub Pages
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches: ["main"]
 
 permissions:
   contents: read
@@ -11,28 +10,32 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: recursive
-      - name: Set up Hugo
+          submodules: recursive # Pulls slothmud-theme and nested blowfish submodules
+
+      - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3
         with:
-          hugo-version: "0.168.0"
+          hugo-version: "0.167.0"
           extended: true
-      - name: Build site
+
+      - name: Build Hugo Site
         run: hugo --minify
-      - name: Upload Pages artifact
+
+      - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./public
+
   deploy:
     environment:
       name: github-pages

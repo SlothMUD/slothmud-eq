@@ -4,7 +4,7 @@ A Hugo-powered static EQ search site. The initial data snapshot is in `static/da
 
 ## Run locally
 
-Install Hugo Extended 0.168.0 or later, then run:
+Initialize the theme submodules if needed, then install Hugo Extended 0.167.0 (the version range declared by the Blowfish submodule) and run:
 
 ```powershell
 hugo server
@@ -14,10 +14,14 @@ Open the local URL printed by Hugo. For a production build, run `hugo --minify`;
 
 ## GitHub Pages
 
-The workflow in `.github/workflows/pages.yml` builds the site and deploys it to GitHub Pages on pushes to `main`. Set the repository's Pages build and deployment source to **GitHub Actions**.
+The site uses the SlothMUD and Blowfish themes declared in `.gitmodules`, with site menus and layout settings in `config/_default/`. The workflow in `.github/workflows/pages.yml` builds the site and deploys it to GitHub Pages on pushes to `main`. It publishes the `eq.slothmud.net` custom domain; set the repository's Pages build and deployment source to **GitHub Actions** and configure that domain's DNS for GitHub Pages.
 
 This is a one-off data snapshot. The existing PHP/MySQL importer and export workflow are not connected to this site.
 
 ## Search coverage
 
-The client uses the item fields available in the JSON export and preserves the current search precedence: a text/VNUM search takes precedence over the other filters. `%` and `_` act as SQL-style wildcards. Type groups, class levels, 40x requirements, exported stats, and item flags are filtered in the browser. Linked mob/area names are included where the local importer snapshot has a corresponding mob record; some links remain searchable by VNUM only.
+The client uses the item fields available in the JSON export. Text/VNUM search, type, class-level, stat, and flag filters combine; selecting multiple types matches any selected type, while other active filters further narrow those results. `%` and `_` act as SQL-style wildcards. Type groups, class levels, 40x requirements, exported stats, and item flags are filtered in the browser. Linked mob/area names are included where the local importer snapshot has a corresponding mob record; some links remain searchable by VNUM only.
+
+## Shareable searches
+
+The URL tracks the current search and filters, and **Copy link** copies it for sharing. Opening a shared URL restores the query, categories (`cat`), weapon subtypes (`sub`), stats (`stat`), class levels (`Wa`, `Th`, `Ma`, `Cl`, `Dr`, `Mo`, `Ba`, `Ne`, `Av`), item flags (`forge`, `personal`, `shapeshift`, `temporary`, `drachma`), hidden-item filter (`hidden=yes`, `hidden=no`, or `hidden=any`), and sort order (`sort`). By default hidden items are excluded (`hidden=no`); `hidden=1` remains supported as an alias for `hidden=any`. Default settings are omitted to keep links short.
