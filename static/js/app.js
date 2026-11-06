@@ -4,8 +4,6 @@
   const resultsList = document.querySelector("#results-list");
   const resultCount = document.querySelector("#result-count");
   const noResults = document.querySelector("#no-results");
-  const loadAllContainer = document.querySelector("#load-all-container");
-  const loadAllButton = document.querySelector("#load-all-results");
   const loadError = document.querySelector("#load-error");
   const searchInput = document.querySelector("#search");
   const sortControl = document.querySelector(".sort-segments");
@@ -13,35 +11,52 @@
   const shareStatus = document.querySelector(".share-status");
   const weaponMaster = document.querySelector('[data-category="weapon"]');
   const weaponOptions = document.querySelector("[data-weapon-options]");
-  const initialResultLimit = 100;
+  const renderBatchSize = 50;
   const searchDelay = 250;
   let items = [];
   let filteredItems = [];
-  let showAllResults = false;
   let isDefaultResults = false;
   let hasSearch = false;
   let searchTimer;
+  let activeRenderId = 0;
 
+  const hasTakeSlot = (item, slot) => {
+    const group = (item.group || "").split(/\s+/);
+    return group[0] === "TAKE" && group.includes(slot);
+  };
+  const monthNumbers = new Map([
+    ["jan", 0], ["feb", 1], ["mar", 2], ["apr", 3],
+    ["may", 4], ["jun", 5], ["jul", 6], ["aug", 7],
+    ["sep", 8], ["oct", 9], ["nov", 10], ["dec", 11]
+  ]);
+  function dateAddedTimestamp(item) {
+    const match = (item.dateadded || "").match(/^(\d{1,2}) ([A-Za-z]{3}) (\d{4})$/);
+    if (!match) return Number.NEGATIVE_INFINITY;
+    const month = monthNumbers.get(match[2].toLocaleLowerCase());
+    if (month === undefined) return Number.NEGATIVE_INFINITY;
+    return Date.UTC(Number(match[3]), month, Number(match[1]));
+  }
   const categoryMatches = {
     weapon: item => item.group === "1 Handed Weapons"
       || item.group === "2 Handed Weapons"
       || item.group === "Fire Weapons"
       || item.group === "Throw-only Weapons",
     light: item => item.group === "Light" || item.type === "LIGHT",
-    finger: item => item.group === "TAKE FINGER",
-    neck: item => item.group === "TAKE NECK" || item.group === "TAKE NECK THROW",
-    body: item => item.group === "TAKE BODY",
-    head: item => item.group === "TAKE HEAD",
-    legs: item => item.group === "TAKE LEGS",
-    feet: item => item.group === "TAKE FEET",
-    hands: item => item.group === "TAKE HANDS" || item.group === "TAKE HANDS THROW",
-    arms: item => item.group === "TAKE ARMS",
-    shield: item => item.group === "TAKE SHIELD" || item.group === "SHIELD" || item.group === "TAKE SHIELD THROW",
-    robe: item => item.group === "TAKE ABOUT" || item.group === "TAKE ABOUT HOLD",
-    waist: item => item.group === "TAKE WAIST",
-    wrist: item => item.group === "TAKE WRIST" || item.group === "WRIST",
-    held: item => item.group === "TAKE HOLD",
-    instrument: item => item.group === "TAKE INSTRUMENT",
+    ammo: item => item.type === "MISSILE",
+    finger: item => hasTakeSlot(item, "FINGER"),
+    neck: item => hasTakeSlot(item, "NECK"),
+    body: item => hasTakeSlot(item, "BODY"),
+    head: item => hasTakeSlot(item, "HEAD"),
+    legs: item => hasTakeSlot(item, "LEGS"),
+    feet: item => hasTakeSlot(item, "FEET"),
+    hands: item => hasTakeSlot(item, "HANDS"),
+    arms: item => hasTakeSlot(item, "ARMS"),
+    shield: item => item.group === "SHIELD" || hasTakeSlot(item, "SHIELD"),
+    robe: item => hasTakeSlot(item, "ABOUT"),
+    waist: item => hasTakeSlot(item, "WAIST"),
+    wrist: item => item.group === "WRIST" || hasTakeSlot(item, "WRIST"),
+    held: item => hasTakeSlot(item, "HOLD"),
+    instrument: item => hasTakeSlot(item, "INSTRUMENT"),
     book: item => item.type === "SPELLBOOK" || item.group === "Spellbooks",
     clasp: item => item.type === "CLASP",
     rune: item => item.type === "RUNE",
@@ -53,6 +68,23 @@
     key: item => item.type === "KEY" || item.group === "Keys",
     note: item => item.type === "NOTE" || item.group === "Notes",
     treasure: item => item.type === "TREASURE" || item.group === "Treasures"
+  };
+  const equipmentGroupNames = {
+    ammo: "AMMO",
+    finger: "FINGER",
+    neck: "NECK",
+    body: "BODY",
+    head: "HEAD",
+    legs: "LEGS",
+    feet: "FEET",
+    hands: "HANDS",
+    arms: "ARMS",
+    shield: "SHIELD",
+    robe: "ABOUT",
+    waist: "WAIST",
+    wrist: "WRIST",
+    held: "HELD",
+    instrument: "INSTRUMENT"
   };
   const statAliases = {
     Spellbonus: ["Spellbonus"],
@@ -264,6 +296,7 @@
     const sort = params.get("sort");
     const sortInput = sortControl.querySelector(`input[value="${sort}"]`);
     if (sortInput) sortInput.checked = true;
+    else sortControl.querySelector('input[value="ac"]').checked = true;
     if (stats.size) document.querySelector(".stats-filter").open = true;
   }
 
@@ -309,9 +342,10 @@
       && selectedCategories.length === 0
       && filters.stats.length === 0
       && !hasClassLevels(filters.levels)
+      && hiddenState === "no"
       && triStateFilters.filter(filter => filter !== "hidden")
         .every(filter => filters.triStates[filter] === "any");
-    return { results: visibleItems, isDefault };
+    return { results: visibleItems, isDefault, selectedCategories };
   }
 
   function statValue(item, stat) {
@@ -331,7 +365,6 @@
 
   function sortItems(result) {
     const mode = sortControl.querySelector("input:checked").value;
-    if (mode === "name") return result.sort((a, b) => a.name.localeCompare(b.name));
     const metric = {
       ac: item => Number(item.ac) || 0,
       dam: item => weaponDamage(item, 1),
@@ -428,11 +461,19 @@
     }
   }
 
-  function renderResultGroups(shownItems, isDefault) {
+  async function renderResultGroups(shownItems, isDefault, selectedCategories, renderId) {
     resultsList.replaceChildren();
 
     const groups = new Map();
-    const groupName = item => isDefault ? "Most Recently Discovered" : (item.group || "Other");
+    const groupName = item => {
+      if (isDefault) return "Most Recently Discovered";
+      const matchingEquipmentCategories = Object.keys(equipmentGroupNames)
+        .filter(category => categoryMatches[category](item));
+      const equipmentCategory = selectedCategories.find(category => (
+        matchingEquipmentCategories.includes(category)
+      )) || (matchingEquipmentCategories.length === 1 ? matchingEquipmentCategories[0] : null);
+      return equipmentGroupNames[equipmentCategory] || item.group || "Other";
+    };
     for (const item of shownItems) {
       const group = groupName(item);
       if (!groups.has(group)) groups.set(group, []);
@@ -445,6 +486,7 @@
       groupCounts.set(group, (groupCounts.get(group) || 0) + 1);
     }
 
+    let renderedItems = 0;
     for (const [group, groupItems] of groups) {
       const section = document.createElement("details");
       section.className = "result-group";
@@ -457,29 +499,53 @@
 
       const content = document.createElement("div");
       content.className = "result-group-items";
-      for (const item of groupItems) content.append(createItemCard(item));
-      section.append(content);
-      resultsList.append(section);
+      for (const item of groupItems) {
+        content.append(createItemCard(item));
+        renderedItems += 1;
+        if (shownItems.length > renderBatchSize && renderedItems % renderBatchSize === 0) {
+          if (!section.isConnected) {
+            section.append(content);
+            resultsList.append(section);
+          }
+          await new Promise(requestAnimationFrame);
+          if (renderId !== activeRenderId) return;
+        }
+      }
+      if (!section.isConnected) {
+        section.append(content);
+        resultsList.append(section);
+      }
     }
   }
 
-  function render() {
-    showAllResults = false;
-    const { results, isDefault } = filterItems();
+  async function render() {
+    const renderId = ++activeRenderId;
+    const { results, isDefault, selectedCategories } = filterItems();
     isDefaultResults = isDefault;
-    filteredItems = sortItems(results);
-    renderCurrentResults();
-  }
-
-  function renderCurrentResults() {
-    const displayedItems = showAllResults ? filteredItems : filteredItems.slice(0, initialResultLimit);
-    renderResultGroups(displayedItems, isDefaultResults);
+    const displayedResults = isDefault
+      ? [...results]
+        .sort((a, b) => dateAddedTimestamp(b) - dateAddedTimestamp(a))
+        .slice(0, 100)
+      : results;
+    filteredItems = sortItems(displayedResults);
     resultCount.textContent = `${filteredItems.length.toLocaleString()} item${filteredItems.length === 1 ? "" : "s"} found`;
     noResults.hidden = filteredItems.length !== 0;
-    const remaining = filteredItems.length - displayedItems.length;
-    loadAllContainer.hidden = remaining <= 0;
-    if (remaining > 0) {
-      loadAllButton.textContent = `Load all ${remaining.toLocaleString()} remaining results`;
+    loadError.hidden = true;
+    const shouldShowLoading = filteredItems.length > renderBatchSize;
+    resultsList.setAttribute("aria-busy", String(shouldShowLoading));
+
+    try {
+      if (shouldShowLoading) await new Promise(requestAnimationFrame);
+      if (renderId !== activeRenderId) return;
+      await renderResultGroups(filteredItems, isDefaultResults, selectedCategories, renderId);
+    } catch (error) {
+      if (renderId !== activeRenderId) return;
+      loadError.textContent = error instanceof Error ? error.message : "An unexpected error occurred while displaying results.";
+      loadError.hidden = false;
+    } finally {
+      if (renderId === activeRenderId) {
+        resultsList.setAttribute("aria-busy", "false");
+      }
     }
   }
 
@@ -520,10 +586,6 @@
   sortControl.addEventListener("change", () => {
     updateUrl();
     render();
-  });
-  loadAllButton.addEventListener("click", () => {
-    showAllResults = true;
-    renderCurrentResults();
   });
   shareButton.addEventListener("click", async () => {
     updateUrl();
