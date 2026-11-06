@@ -231,6 +231,23 @@ input[type="checkbox"] { width: 15px; height: 15px; margin: 0; accent-color: var
   font-weight: 700;
   white-space: nowrap;
 }
+.download-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+  height: 36px;
+  padding: 0 9px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--soft-accent);
+  color: var(--accent-dark);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.download-button:hover { background: color-mix(in srgb, var(--soft-accent) 75%, var(--accent)); }
 .share-button:hover { background: color-mix(in srgb, var(--paper) 80%, var(--muted)); }
 .share-status { grid-column: 1 / -1; color: var(--muted); font-size: 10px; }
 .share-status:empty { display: none; }
@@ -350,6 +367,8 @@ html.dark #eq-app .reset-button {
 html.dark #eq-app .reset-button:hover { background: #40515e; }
 
 html.dark #eq-app .share-button:hover { background: #34424d; }
+
+html.dark #eq-app .download-button:hover { background: #492d25; }
 
 html.dark #eq-app .filter-group {
   background: color-mix(in srgb, var(--paper) 94%, #000);
