@@ -92,6 +92,12 @@
     UndeadControl: ["UndeadControl"],
     WaterBreathing: ["WaterBreathing"]
   };
+  const statRawFields = {
+    SavingPara: "AFF_SAVING_PARA",
+    SavingPoison: "AFF_SAVING_POISON",
+    SavingPetri: "AFF_SAVING_PETRI",
+    SavingBreath: "AFF_SAVING_BREATH"
+  };
   const classLevels = ["Th", "Ma", "Cl", "Dr", "Mo", "Ba", "Ne", "Wa"];
   const weaponSubtypeCodes = new Map([
     ["1 Handed Weapons", "1h"],
@@ -126,6 +132,15 @@
       .map(input => input.dataset.category || input.dataset.weaponSubtype || input.dataset.stat || input.value);
   }
 
+  function setTriState(filter, state) {
+    const button = document.querySelector(`[data-tristate="${filter}"] .tri-state-button`);
+    if (!button || !["any", "yes", "no"].includes(state)) return;
+    button.dataset.state = state;
+    button.textContent = state[0].toLocaleUpperCase() + state.slice(1);
+    const label = button.closest(".tri-filter").querySelector(".tri-label").textContent;
+    button.setAttribute("aria-label", `${label}: ${button.textContent}`);
+  }
+
   function statNames(item) {
     return (item.stats || "")
       .split(",")
@@ -134,6 +149,12 @@
   }
 
   function hasStat(item, stat) {
+    if (stat === "Pierce") {
+      return (item.stats || "").split(",").some(value => /^WeaponType\s+pierce$/i.test(value.trim()));
+    }
+    const rawField = statRawFields[stat];
+    if (rawField) return String(item.raw?.[rawField] ?? "").trim() !== "";
+
     const names = statAliases[stat] || [stat];
     const present = statNames(item);
     return names.some(name => present.includes(name.toLocaleLowerCase()));
@@ -210,7 +231,7 @@
     }
     const triStates = {};
     for (const filter of document.querySelectorAll("[data-tristate]")) {
-      triStates[filter.dataset.tristate] = filter.querySelector("input:checked").value;
+      triStates[filter.dataset.tristate] = filter.querySelector(".tri-state-button").dataset.state;
     }
     return {
       categories: selectedValues("[data-category]"),
@@ -282,17 +303,12 @@
 
     for (const filter of triStateFilters.filter(name => name !== "hidden")) {
       const value = params.get(filter);
-      if (value === "yes" || value === "no") {
-        const input = document.querySelector(`[data-tristate="${filter}"] input[value="${value}"]`);
-        if (input) input.checked = true;
-      }
+      setTriState(filter, value || "any");
     }
 
     const hiddenValue = params.get("hidden");
     const hiddenState = hiddenValue === "1" ? "any" : hiddenValue;
-    if (hiddenState === "any" || hiddenState === "yes" || hiddenState === "no") {
-      document.querySelector(`[data-tristate="hidden"] input[value="${hiddenState}"]`).checked = true;
-    }
+    setTriState("hidden", hiddenState || "no");
     const sort = params.get("sort");
     const sortInput = sortControl.querySelector(`input[value="${sort}"]`);
     if (sortInput) sortInput.checked = true;
@@ -576,6 +592,16 @@
     updateUrl();
     render();
   });
+  form.addEventListener("click", event => {
+    const button = event.target.closest(".tri-state-button");
+    if (!button) return;
+    const filter = button.closest("[data-tristate]").dataset.tristate;
+    const states = ["any", "yes", "no"];
+    const nextState = states[(states.indexOf(button.dataset.state) + 1) % states.length];
+    setTriState(filter, nextState);
+    updateUrl();
+    render();
+  });
   searchInput.addEventListener("input", () => {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
@@ -607,6 +633,9 @@
     clearTimeout(searchTimer);
     sortControl.querySelector('input[value="ac"]').checked = true;
     requestAnimationFrame(() => {
+      for (const filter of triStateFilters) {
+        setTriState(filter, filter === "hidden" ? "no" : "any");
+      }
       updateWeaponControls();
       updateTypeControls();
       updateUrl();

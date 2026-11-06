@@ -199,6 +199,21 @@ input[type="checkbox"] { width: 15px; height: 15px; margin: 0; accent-color: var
 .level-grid input[type="number"]::-webkit-inner-spin-button,
 .level-grid input[type="number"]::-webkit-outer-spin-button { appearance: none; margin: 0; }
 .stats-filter .filter-group-content { container-type: inline-size; }
+.stats-groups { display: grid; gap: 6px; }
+.stat-group + .stat-group { padding-top: 6px; border-top: 1px solid var(--line); }
+.attribute-grid { display: grid; gap: 0 8px; }
+.attribute-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 8px; }
+.attribute-row label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 21px;
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 1.25;
+}
+.attribute-row label span { overflow-wrap: anywhere; }
 .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .equipment-grid { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); }
 .misc-equipment-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -208,7 +223,24 @@ input[type="checkbox"] { width: 15px; height: 15px; margin: 0; accent-color: var
 .tri-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; }
 .tri-filter { min-width: 0; }
 .tri-label { display: block; margin: 0; color: var(--muted); font-size: 10px; font-weight: 700; }
-.item-flags-filter .tri-filter { display: grid; grid-template-columns: 62px minmax(0, 1fr); align-items: center; gap: 4px; }
+.item-flags-filter .tri-filter { display: grid; grid-template-columns: minmax(0, 1fr) 42px; align-items: center; gap: 4px; }
+.tri-state-button {
+  width: 42px;
+  height: 24px;
+  padding: 2px 3px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  cursor: pointer;
+}
+.tri-state-button[data-state="yes"] { border-color: var(--accent); background: var(--accent); color: #fff; }
+.tri-state-button[data-state="no"] { border-color: var(--line); background: #e9edf0; color: var(--ink); }
+.tri-state-button:focus-visible { outline: 2px solid var(--accent-dark); outline-offset: 2px; }
 .segment-control {
   display: flex;
   overflow: hidden;
@@ -426,6 +458,8 @@ html.dark #eq-app .reset-button {
   background: #34424d;
   color: var(--ink);
 }
+
+html.dark #eq-app .tri-state-button[data-state="no"] { border-color: var(--line); background: #34424d; color: var(--ink); }
 
 html.dark #eq-app .reset-button:hover { background: #40515e; }
 

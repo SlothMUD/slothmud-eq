@@ -93,38 +93,73 @@
       <details class="filter-group stats-filter" open>
         <summary>Stats</summary>
         <div class="filter-group-content">
-          <div class="choice-grid stats-grid">
-          <label><input type="checkbox" data-stat="Mp"><span>Mana</span></label>
-          <label><input type="checkbox" data-stat="Mr"><span>Mana regen</span></label>
-          <label><input type="checkbox" data-stat="Hp"><span>HP</span></label>
-          <label><input type="checkbox" data-stat="Hpr"><span>HP regen</span></label>
-          <label><input type="checkbox" data-stat="Mvr"><span>Move regen</span></label>
-          <label><input type="checkbox" data-stat="Str"><span>Str</span></label>
-          <label><input type="checkbox" data-stat="Int"><span>Int</span></label>
-          <label><input type="checkbox" data-stat="Wis"><span>Wis</span></label>
-          <label><input type="checkbox" data-stat="Dex"><span>Dex</span></label>
-          <label><input type="checkbox" data-stat="Con"><span>Con</span></label>
-          <label><input type="checkbox" data-stat="MaxStr"><span>Max Str</span></label>
-          <label><input type="checkbox" data-stat="MaxInt"><span>Max Int</span></label>
-          <label><input type="checkbox" data-stat="MaxWis"><span>Max Wis</span></label>
-          <label><input type="checkbox" data-stat="MaxDex"><span>Max Dex</span></label>
-          <label><input type="checkbox" data-stat="MaxCon"><span>Max Con</span></label>
-          <label><input type="checkbox" data-stat="Dam"><span>DAM</span></label>
-          <label><input type="checkbox" data-stat="Hit"><span>Hit</span></label>
-          <label><input type="checkbox" data-stat="HandDam"><span>Hand dam</span></label>
-          <label><input type="checkbox" data-stat="WeaponDam"><span>Weapon dam</span></label>
-          <label><input type="checkbox" data-stat="StabDam"><span>Stab dam</span></label>
-          <label><input type="checkbox" data-stat="KickDam"><span>Kick dam</span></label>
-          <label><input type="checkbox" data-stat="FlailDam"><span>Flail dam</span></label>
-          <label><input type="checkbox" data-stat="CircleDam"><span>Circle dam</span></label>
-          <label><input type="checkbox" data-stat="Spellbonus"><span>Spell bonus</span></label>
-          <label><input type="checkbox" data-stat="Healbonus"><span>Heal bonus</span></label>
-          <label><input type="checkbox" data-stat="UndeadControl"><span>Undead control</span></label>
-          <label><input type="checkbox" data-stat="Charisma"><span>Charisma</span></label>
-          <label><input type="checkbox" data-stat="Shock"><span>System shock</span></label>
-          <label><input type="checkbox" data-stat="ReduceDam"><span>Reduce dam</span></label>
-          <label><input type="checkbox" data-stat="SpellSaves"><span>Spell saves</span></label>
-          <label><input type="checkbox" data-stat="WaterBreathing"><span>Water breath</span></label>
+          <div class="stats-groups">
+            <section class="stat-group attribute-group">
+              <div class="attribute-grid">
+                <div class="attribute-row">
+                  <label><input type="checkbox" data-stat="Str"><span>Str</span></label>
+                  <label><input type="checkbox" data-stat="MaxStr"><span>Max Str</span></label>
+                </div>
+                <div class="attribute-row">
+                  <label><input type="checkbox" data-stat="Int"><span>Int</span></label>
+                  <label><input type="checkbox" data-stat="MaxInt"><span>Max Int</span></label>
+                </div>
+                <div class="attribute-row">
+                  <label><input type="checkbox" data-stat="Wis"><span>Wis</span></label>
+                  <label><input type="checkbox" data-stat="MaxWis"><span>Max Wis</span></label>
+                </div>
+                <div class="attribute-row">
+                  <label><input type="checkbox" data-stat="Dex"><span>Dex</span></label>
+                  <label><input type="checkbox" data-stat="MaxDex"><span>Max Dex</span></label>
+                </div>
+                <div class="attribute-row">
+                  <label><input type="checkbox" data-stat="Con"><span>Con</span></label>
+                  <label><input type="checkbox" data-stat="MaxCon"><span>Max Con</span></label>
+                </div>
+              </div>
+            </section>
+            <section class="stat-group">
+              <div class="choice-grid stats-grid">
+                <label><input type="checkbox" data-stat="Dam"><span>Dam</span></label>
+                <label><input type="checkbox" data-stat="Hit"><span>Hit</span></label>
+                <label><input type="checkbox" data-stat="HandDam"><span>Hand damage</span></label>
+                <label><input type="checkbox" data-stat="WeaponDam"><span>Weapon Damage</span></label>
+                <label><input type="checkbox" data-stat="StabDam"><span>Stab Damage</span></label>
+                <label><input type="checkbox" data-stat="Pierce"><span>Pierce</span></label>
+                <label><input type="checkbox" data-stat="KickDam"><span>Kick damage</span></label>
+                <label><input type="checkbox" data-stat="FlailDam"><span>Flail damage</span></label>
+                <label><input type="checkbox" data-stat="CircleDam"><span>Circle damage</span></label>
+              </div>
+            </section>
+            <section class="stat-group">
+              <div class="choice-grid stats-grid">
+                <label><input type="checkbox" data-stat="Spellbonus"><span>Spell Bonus</span></label>
+                <label><input type="checkbox" data-stat="Healbonus"><span>Heal Bonus</span></label>
+                <label><input type="checkbox" data-stat="UndeadControl"><span>Undead Control</span></label>
+                <label><input type="checkbox" data-stat="Charisma"><span>Charisma</span></label>
+                <label><input type="checkbox" data-stat="Shock"><span>System Shock</span></label>
+                <label><input type="checkbox" data-stat="ReduceDam"><span>Reduce Damage</span></label>
+              </div>
+            </section>
+            <section class="stat-group">
+              <div class="choice-grid stats-grid">
+                <label><input type="checkbox" data-stat="SavingPara"><span>SAVING_PARA</span></label>
+                <label><input type="checkbox" data-stat="SavingPoison"><span>SAVING_POISON</span></label>
+                <label><input type="checkbox" data-stat="SavingPetri"><span>SAVING_PETRI</span></label>
+                <label><input type="checkbox" data-stat="SavingBreath"><span>SAVING_BREATH</span></label>
+                <label><input type="checkbox" data-stat="SpellSaves"><span>SAVING_SPELL</span></label>
+              </div>
+            </section>
+            <section class="stat-group">
+              <div class="choice-grid stats-grid">
+                <label><input type="checkbox" data-stat="Mp"><span>Mana</span></label>
+                <label><input type="checkbox" data-stat="Mr"><span>Mana regen</span></label>
+                <label><input type="checkbox" data-stat="Hp"><span>HP</span></label>
+                <label><input type="checkbox" data-stat="Hpr"><span>HP regen</span></label>
+                <label><input type="checkbox" data-stat="Mvr"><span>Move regen</span></label>
+                <label><input type="checkbox" data-stat="WaterBreathing"><span>Water breath</span></label>
+              </div>
+            </section>
           </div>
         </div>
       </details>
@@ -135,51 +170,27 @@
         <div class="tri-grid">
           <div class="tri-filter" data-tristate="forge">
             <span class="tri-label">Forge</span>
-            <div class="segment-control" role="group" aria-label="Forge filter">
-              <label><input type="radio" name="filter-forge" value="any" checked><span>Any</span></label>
-              <label><input type="radio" name="filter-forge" value="yes"><span>Yes</span></label>
-              <label><input type="radio" name="filter-forge" value="no"><span>No</span></label>
-            </div>
+            <button type="button" class="tri-state-button" data-state="any" aria-label="Forge: Any">Any</button>
           </div>
           <div class="tri-filter" data-tristate="personal">
             <span class="tri-label">Personal</span>
-            <div class="segment-control" role="group" aria-label="Personal filter">
-              <label><input type="radio" name="filter-personal" value="any" checked><span>Any</span></label>
-              <label><input type="radio" name="filter-personal" value="yes"><span>Yes</span></label>
-              <label><input type="radio" name="filter-personal" value="no"><span>No</span></label>
-            </div>
+            <button type="button" class="tri-state-button" data-state="any" aria-label="Personal: Any">Any</button>
           </div>
           <div class="tri-filter" data-tristate="shapeshift">
             <span class="tri-label">Shapeshift</span>
-            <div class="segment-control" role="group" aria-label="Shapeshift filter">
-              <label><input type="radio" name="filter-shapeshift" value="any" checked><span>Any</span></label>
-              <label><input type="radio" name="filter-shapeshift" value="yes"><span>Yes</span></label>
-              <label><input type="radio" name="filter-shapeshift" value="no"><span>No</span></label>
-            </div>
+            <button type="button" class="tri-state-button" data-state="any" aria-label="Shapeshift: Any">Any</button>
           </div>
           <div class="tri-filter" data-tristate="temporary">
             <span class="tri-label">Temporary</span>
-            <div class="segment-control" role="group" aria-label="Temporary filter">
-              <label><input type="radio" name="filter-temporary" value="any" checked><span>Any</span></label>
-              <label><input type="radio" name="filter-temporary" value="yes"><span>Yes</span></label>
-              <label><input type="radio" name="filter-temporary" value="no"><span>No</span></label>
-            </div>
+            <button type="button" class="tri-state-button" data-state="any" aria-label="Temporary: Any">Any</button>
           </div>
           <div class="tri-filter" data-tristate="drachma">
             <span class="tri-label">Drachma</span>
-            <div class="segment-control" role="group" aria-label="Drachma filter">
-              <label><input type="radio" name="filter-drachma" value="any" checked><span>Any</span></label>
-              <label><input type="radio" name="filter-drachma" value="yes"><span>Yes</span></label>
-              <label><input type="radio" name="filter-drachma" value="no"><span>No</span></label>
-            </div>
+            <button type="button" class="tri-state-button" data-state="any" aria-label="Drachma: Any">Any</button>
           </div>
           <div class="tri-filter" data-tristate="hidden">
             <span class="tri-label">Hidden</span>
-            <div class="segment-control" role="group" aria-label="Hidden item filter">
-              <label><input type="radio" name="filter-hidden" value="any"><span>Any</span></label>
-              <label><input type="radio" name="filter-hidden" value="yes"><span>Yes</span></label>
-              <label><input type="radio" name="filter-hidden" value="no" checked><span>No</span></label>
-            </div>
+            <button type="button" class="tri-state-button" data-state="no" aria-label="Hidden: No">No</button>
           </div>
         </div>
         </div>
