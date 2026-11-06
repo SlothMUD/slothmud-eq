@@ -426,29 +426,47 @@
     }
   }
 
+  function renderResultGroups(shownItems, isDefault, collapsedGroups = new Set()) {
+    resultsList.replaceChildren();
+
+    const groups = new Map();
+    const groupName = item => isDefault ? "Most Recently Discovered" : (item.group || "Other");
+    for (const item of shownItems) {
+      const group = groupName(item);
+      if (!groups.has(group)) groups.set(group, []);
+      groups.get(group).push(item);
+    }
+
+    const groupCounts = new Map();
+    for (const item of filteredItems) {
+      const group = groupName(item);
+      groupCounts.set(group, (groupCounts.get(group) || 0) + 1);
+    }
+
+    for (const [group, groupItems] of groups) {
+      const section = document.createElement("details");
+      section.className = "result-group";
+      section.dataset.group = group;
+      section.open = !collapsedGroups.has(group);
+
+      const heading = document.createElement("summary");
+      heading.textContent = `${group} (${groupCounts.get(group)})`;
+      section.append(heading);
+
+      const content = document.createElement("div");
+      content.className = "result-group-items";
+      for (const item of groupItems) content.append(createItemCard(item));
+      section.append(content);
+      resultsList.append(section);
+    }
+  }
+
   function render() {
     const { results, isDefault } = filterItems();
     filteredItems = sortItems(results);
     visibleCount = pageSize;
     const shown = filteredItems.slice(0, visibleCount);
-    resultsList.replaceChildren();
-
-    const groups = new Map();
-    for (const item of shown) {
-      const group = isDefault ? "Most Recently Discovered" : (item.group || "Other");
-      if (!groups.has(group)) groups.set(group, []);
-      groups.get(group).push(item);
-    }
-
-    for (const [group, groupItems] of groups) {
-      const section = document.createElement("section");
-      section.className = "result-group";
-      const heading = document.createElement("h3");
-      heading.textContent = `${group} (${filteredItems.filter(item => (isDefault ? "Most Recently Discovered" : item.group || "Other") === group).length})`;
-      section.append(heading);
-      for (const item of groupItems) section.append(createItemCard(item));
-      resultsList.append(section);
-    }
+    renderResultGroups(shown, isDefault);
 
     resultCount.textContent = `${filteredItems.length.toLocaleString()} item${filteredItems.length === 1 ? "" : "s"} found${shown.length < filteredItems.length ? ` · showing ${shown.length.toLocaleString()}` : ""}`;
     noResults.hidden = filteredItems.length !== 0;
@@ -511,30 +529,17 @@
   });
   loadMore.addEventListener("click", () => {
     visibleCount += pageSize;
-    const previousCount = visibleCount;
-    const shownItems = filteredItems.slice(0, previousCount);
-    resultsList.replaceChildren();
-    const groups = new Map();
-    const isDefault = !hasSearch && getCurrentFilters().categories.length === 0
-      && selectedValues("[data-stat]").length === 0
-      && !hasClassLevels(getCurrentFilters().levels)
+    const collapsedGroups = new Set(
+      [...resultsList.querySelectorAll(".result-group:not([open])")].map(group => group.dataset.group)
+    );
+    const shownItems = filteredItems.slice(0, visibleCount);
+    const filters = getCurrentFilters();
+    const isDefault = !hasSearch && filters.categories.length === 0
+      && filters.stats.length === 0
+      && !hasClassLevels(filters.levels)
       && triStateFilters.filter(filter => filter !== "hidden")
-        .every(filter => getCurrentFilters().triStates[filter] === "any");
-    for (const item of shownItems) {
-      const group = isDefault ? "Most Recently Discovered" : (item.group || "Other");
-      if (!groups.has(group)) groups.set(group, []);
-      groups.get(group).push(item);
-    }
-    for (const [group, groupItems] of groups) {
-      const section = document.createElement("section");
-      section.className = "result-group";
-      const heading = document.createElement("h3");
-      const count = filteredItems.filter(item => (isDefault ? "Most Recently Discovered" : item.group || "Other") === group).length;
-      heading.textContent = `${group} (${count})`;
-      section.append(heading);
-      for (const item of groupItems) section.append(createItemCard(item));
-      resultsList.append(section);
-    }
+        .every(filter => filters.triStates[filter] === "any");
+    renderResultGroups(shownItems, isDefault, collapsedGroups);
     resultCount.textContent = `${filteredItems.length.toLocaleString()} items found · showing ${shownItems.length.toLocaleString()}`;
     loadMore.hidden = shownItems.length >= filteredItems.length;
   });

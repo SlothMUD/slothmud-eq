@@ -9,25 +9,25 @@ weight = 2
 
 [[main]]
 name = "Live"
-url = "https://live.slothmud.net"
+url = "https://www.slothmud.net/live"
 identifier = "E8MYGAT9ZF"
 weight = 1
 
 [[main]]
 name = "Maps"
-url = "https://maps.slothmud.net"
+url = "https://www.slothmud.net/maps"
 identifier = "zbdAgZvZFw"
 weight = 3
 
 [[main]]
 name = "Quests"
-url = "https://quests.slothmud.net"
+url = "https://www.slothmud.net/quests"
 identifier = "1uetG4VHV5"
 weight = 4
 
 [[main]]
 name = "Docs"
-url = "https://docs.slothmud.net"
+url = "https://www.slothmud.net/docs"
 identifier = "PT5PCi3YVL"
 weight = 5
 
