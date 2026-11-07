@@ -9,8 +9,6 @@
   const sortControl = document.querySelector(".sort-segments");
   const shareButton = document.querySelector(".share-button");
   const shareStatus = document.querySelector(".share-status");
-  const weaponMaster = document.querySelector('[data-category="weapon"]');
-  const weaponOptions = document.querySelector("[data-weapon-options]");
   const renderBatchSize = 50;
   const searchDelay = 250;
   let items = [];
@@ -133,12 +131,15 @@
   }
 
   function setTriState(filter, state) {
-    const button = document.querySelector(`[data-tristate="${filter}"] .tri-state-button`);
-    if (!button || !["any", "yes", "no"].includes(state)) return;
-    button.dataset.state = state;
-    button.textContent = state[0].toLocaleUpperCase() + state.slice(1);
-    const label = button.closest(".tri-filter").querySelector(".tri-label").textContent;
-    button.setAttribute("aria-label", `${label}: ${button.textContent}`);
+    const checkbox = document.querySelector(`[data-tristate="${filter}"] .tri-state-checkbox`);
+    if (!checkbox || !["any", "yes", "no"].includes(state)) return;
+    checkbox.dataset.state = state;
+    checkbox.checked = state === "yes";
+    checkbox.indeterminate = state === "no";
+    const label = checkbox.closest(".tri-filter").querySelector("span").textContent;
+    const stateLabel = state === "yes" ? "Required" : state === "no" ? "Excluded" : "Any";
+    checkbox.setAttribute("aria-label", `${label}: ${stateLabel}`);
+    checkbox.setAttribute("aria-checked", state === "yes" ? "true" : state === "no" ? "mixed" : "false");
   }
 
   function statNames(item) {
@@ -231,7 +232,7 @@
     }
     const triStates = {};
     for (const filter of document.querySelectorAll("[data-tristate]")) {
-      triStates[filter.dataset.tristate] = filter.querySelector(".tri-state-button").dataset.state;
+      triStates[filter.dataset.tristate] = filter.querySelector(".tri-state-checkbox").dataset.state;
     }
     return {
       categories: selectedValues("[data-category]"),
@@ -247,12 +248,12 @@
     const filters = getCurrentFilters();
     const params = new URLSearchParams();
     if (filters.query) params.set("q", filters.query);
-    for (const category of filters.categories) params.append("cat", category);
-    if (filters.categories.includes("weapon")) {
-      for (const subtype of filters.weaponSubtypes) {
-        const code = weaponSubtypeCodes.get(subtype);
-        if (code) params.append("sub", code);
-      }
+    for (const category of filters.categories) {
+      if (category !== "weapon") params.append("cat", category);
+    }
+    for (const subtype of filters.weaponSubtypes) {
+      const code = weaponSubtypeCodes.get(subtype);
+      if (code) params.append("sub", code);
     }
     for (const stat of filters.stats) params.append("stat", stat);
     for (const [className, level] of Object.entries(filters.levels)) {
@@ -284,11 +285,13 @@
       input.checked = categories.has(input.dataset.category);
     }
 
-    if (params.has("sub") || categories.has("weapon")) {
-      const subtypes = new Set(params.getAll("sub").map(code => weaponSubtypeNames.get(code)).filter(Boolean));
-      for (const input of document.querySelectorAll("[data-weapon-subtype]")) {
-        input.checked = subtypes.has(input.dataset.weaponSubtype);
-      }
+    const subtypes = params.has("sub")
+      ? new Set(params.getAll("sub").map(code => weaponSubtypeNames.get(code)).filter(Boolean))
+      : categories.has("weapon")
+        ? new Set(weaponSubtypeCodes.keys())
+        : new Set();
+    for (const input of document.querySelectorAll("[data-weapon-subtype]")) {
+      input.checked = subtypes.has(input.dataset.weaponSubtype);
     }
 
     const stats = new Set(params.getAll("stat"));
@@ -313,7 +316,10 @@
     const sortInput = sortControl.querySelector(`input[value="${sort}"]`);
     if (sortInput) sortInput.checked = true;
     else sortControl.querySelector('input[value="ac"]').checked = true;
-    if (stats.size) document.querySelector(".stats-filter").open = true;
+    if (stats.size) {
+      document.querySelectorAll(".resource-filter, .damage-filter, .attribute-filter, .bonus-filter")
+        .forEach(group => { group.open = true; });
+    }
   }
 
   function filterItems() {
@@ -329,15 +335,11 @@
     }
 
     const selectedCategories = filters.categories;
-    if (selectedCategories.length) {
-      visibleItems = visibleItems.filter(item => selectedCategories.some(category => {
-        if (category === "weapon") {
-          return filters.weaponSubtypes.length > 0
-            && filters.weaponSubtypes.some(group => item.group === group)
-            && categoryMatches.weapon(item);
-        }
-        return categoryMatches[category](item);
-      }));
+    if (selectedCategories.length || filters.weaponSubtypes.length) {
+      visibleItems = visibleItems.filter(item => (
+        selectedCategories.some(category => categoryMatches[category]?.(item))
+        || filters.weaponSubtypes.some(group => item.group === group)
+      ));
     }
 
     if (filters.stats.length) {
@@ -356,6 +358,7 @@
 
     const isDefault = !hasSearch
       && selectedCategories.length === 0
+      && filters.weaponSubtypes.length === 0
       && filters.stats.length === 0
       && !hasClassLevels(filters.levels)
       && hiddenState === "no"
@@ -460,19 +463,10 @@
     return article;
   }
 
-  function updateWeaponControls() {
-    const enabled = weaponMaster.checked;
-    weaponOptions.classList.toggle("is-disabled", !enabled);
-    weaponOptions.setAttribute("aria-disabled", String(!enabled));
-    for (const input of weaponOptions.querySelectorAll("input")) {
-      input.disabled = !enabled;
-    }
-  }
-
   function updateTypeControls() {
-    const categories = [...document.querySelectorAll(".equipment-filter [data-category]")];
-    const hasSelection = categories.some(input => input.checked);
-    for (const input of categories) {
+    const typeFilters = [...document.querySelectorAll(".type-filter [data-category], .type-filter [data-weapon-subtype]")];
+    const hasSelection = typeFilters.some(input => input.checked);
+    for (const input of typeFilters) {
       input.closest("label").classList.toggle("is-unselected", hasSelection && !input.checked);
     }
   }
@@ -587,17 +581,16 @@
     render();
   });
   form.addEventListener("change", event => {
-    if (event.target === weaponMaster) updateWeaponControls();
-    if (event.target.matches("[data-category]")) updateTypeControls();
+    if (event.target.matches("[data-category], [data-weapon-subtype]")) updateTypeControls();
     updateUrl();
     render();
   });
   form.addEventListener("click", event => {
-    const button = event.target.closest(".tri-state-button");
-    if (!button) return;
-    const filter = button.closest("[data-tristate]").dataset.tristate;
+    const checkbox = event.target.closest(".tri-state-checkbox");
+    if (!checkbox) return;
+    const filter = checkbox.closest("[data-tristate]").dataset.tristate;
     const states = ["any", "yes", "no"];
-    const nextState = states[(states.indexOf(button.dataset.state) + 1) % states.length];
+    const nextState = states[(states.indexOf(checkbox.dataset.state) + 1) % states.length];
     setTriState(filter, nextState);
     updateUrl();
     render();
@@ -625,7 +618,6 @@
   window.addEventListener("popstate", () => {
     clearTimeout(searchTimer);
     applyUrlState();
-    updateWeaponControls();
     updateTypeControls();
     render();
   });
@@ -636,7 +628,6 @@
       for (const filter of triStateFilters) {
         setTriState(filter, filter === "hidden" ? "no" : "any");
       }
-      updateWeaponControls();
       updateTypeControls();
       updateUrl();
       render();
@@ -644,7 +635,6 @@
   });
 
   applyUrlState();
-  updateWeaponControls();
   updateTypeControls();
   updateUrl();
   loadData();
