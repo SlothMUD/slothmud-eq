@@ -1,5 +1,5 @@
 {{ define "main" }}
-  <div id="eq-app" class="eq-search-page" data-items-url="{{ .Site.Params.dataPath | relURL }}">
+  <div id="eq-app" class="eq-search-page" data-items-url="{{ .Site.Params.dataPath | relURL }}" data-mob-locations-url="{{ "data/mob-locations.json" | relURL }}">
     <form id="filters" class="filters">
       <div class="search-row">
         <label for="search">Search items</label>

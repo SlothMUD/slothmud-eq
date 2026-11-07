@@ -12,6 +12,7 @@
   const renderBatchSize = 50;
   const searchDelay = 250;
   let items = [];
+  let mobLocations = new Map();
   let filteredItems = [];
   let isDefaultResults = false;
   let hasSearch = false;
@@ -277,7 +278,9 @@
   }
 
   function applyUrlState() {
-    const params = new URLSearchParams(location.search);
+    let params = new URLSearchParams(location.search);
+    const itemVnum = params.get("q");
+    if (/^\d+$/.test(itemVnum || "")) params = new URLSearchParams({ q: itemVnum });
     searchInput.value = params.get("q") || "";
 
     const categories = new Set(params.getAll("cat"));
@@ -409,14 +412,152 @@
     const title = document.createElement("dt");
     const detail = document.createElement("dd");
     title.textContent = `${label}:`;
-    detail.textContent = Array.isArray(value) ? value.map(flatten).join(", ") : flatten(value);
+    if (label === "AC" || label === "HitDice" || label === "Weapon dice") {
+      detail.classList.add("item-monospace-value");
+    }
+    if (label === "AC") {
+      detail.classList.add("item-ac-value");
+      const armorClass = Number(value);
+      if (Number.isFinite(armorClass)) {
+        const [integer, decimal] = armorClass.toFixed(1).split(".");
+        detail.textContent = `${integer.padStart(3, " ")}.${decimal}`;
+      } else {
+        detail.textContent = flatten(value);
+      }
+    } else {
+      detail.textContent = Array.isArray(value) ? value.map(flatten).join(", ") : flatten(value);
+    }
     row.append(title, detail);
     list.append(row);
   }
 
-  function createItemCard(item) {
+  function appendMarker(list, text, className = "") {
+    if (!text) return;
+    const row = document.createElement("div");
+    row.className = "item-detail-marker";
+    if (className) row.classList.add(className);
+    row.textContent = text;
+    list.append(row);
+  }
+
+  function createSearchLink(value) {
+    const name = flatten(value).trim();
+    if (!name) return null;
+    const target = new URL(location.href);
+    target.search = "";
+    target.searchParams.set("q", name);
+    const link = document.createElement("a");
+    link.className = "item-search-link";
+    link.href = target.href;
+    link.dataset.searchQuery = name;
+    link.textContent = name;
+    return link;
+  }
+
+  function appendMobSources(list, item) {
+    const mobIds = Array.isArray(item.mobs) ? item.mobs : [];
+    const mobNames = Array.isArray(item.mobNames) ? item.mobNames.map(flatten) : [];
+    const areaNames = Array.isArray(item.areaNames) ? item.areaNames.map(flatten) : [];
+    const sources = [];
+    const addSource = (name, area = "", continent = "") => {
+      const cleanName = flatten(name).trim();
+      const cleanArea = flatten(area).trim();
+      if (!cleanName && !cleanArea) return;
+      const key = `${cleanName.toLocaleLowerCase()}\u0000${cleanArea.toLocaleLowerCase()}\u0000${continent}`;
+      if (!sources.some(source => source.key === key)) {
+        sources.push({ name: cleanName, area: cleanArea, continent, key });
+      }
+    };
+    const fallbackArea = index => {
+      if (areaNames.length === 1) return areaNames[0];
+      if (areaNames.length === mobIds.length) return areaNames[index];
+      return "";
+    };
+
+    mobIds.forEach((vnum, index) => {
+      const location = mobLocations.get(String(vnum));
+      if (location) {
+        addSource(location.name, location.area, location.continent);
+      } else if (mobNames.length === mobIds.length) {
+        addSource(mobNames[index], fallbackArea(index));
+      }
+    });
+
+    for (let index = 0; index < mobNames.length; index += 1) {
+      if (sources.some(source => source.name.toLocaleLowerCase() === mobNames[index].trim().toLocaleLowerCase())) continue;
+      addSource(mobNames[index], areaNames.length === 1 ? areaNames[0] : areaNames.length === mobNames.length ? areaNames[index] : "");
+    }
+
+    if (sources.length === 0 && areaNames.length) {
+      areaNames.forEach(area => addSource("", area));
+    }
+
+    for (const source of sources) {
+      const row = document.createElement("div");
+      row.className = "item-mob-source";
+      const detail = document.createElement("dd");
+      const mobLink = createSearchLink(source.name);
+      const areaLink = createSearchLink(source.area);
+      if (mobLink) detail.append(mobLink);
+      if (mobLink && areaLink) detail.append(document.createTextNode(" · "));
+      if (areaLink) detail.append(areaLink);
+      if (source.continent) detail.append(document.createTextNode(` [${source.continent}]`));
+      row.append(detail);
+      list.append(row);
+    }
+  }
+
+  function appendCpForLinks(list, cpFor) {
+    if (!cpFor || typeof cpFor !== "object" || Array.isArray(cpFor)) return;
+    const row = document.createElement("div");
+    const title = document.createElement("dt");
+    const detail = document.createElement("dd");
+    title.textContent = "CP for:";
+
+    let linkCount = 0;
+    Object.entries(cpFor).forEach(([vnum, name]) => {
+      if (!/^\d+$/.test(vnum)) return;
+      if (linkCount > 0) detail.append(document.createTextNode(", "));
+      const target = new URL(location.href);
+      target.search = "";
+      target.searchParams.set("q", vnum);
+      const link = document.createElement("a");
+      link.className = "item-search-link";
+      link.href = target.href;
+      link.dataset.searchQuery = vnum;
+      link.textContent = `${flatten(name)} (#${vnum})`;
+      detail.append(link);
+      linkCount += 1;
+    });
+
+    if (detail.childElementCount) {
+      row.append(title, detail);
+      list.append(row);
+    }
+  }
+
+  function itemLayout(item) {
+    const weaponGroups = ["1 Handed Weapons", "2 Handed Weapons", "Fire Weapons", "Throw-only Weapons"];
+    if (weaponGroups.includes(item.group)) return "weapon";
+    if ((item.group || "").startsWith("TAKE ")) return "worn";
+    return "other";
+  }
+
+  function weaponHitDice(value) {
+    if (!value) return "";
+    const match = String(value).match(/^\s*(\d+d\d+)\s+([+-]?\d+)\s+([+-]?\d+)/i);
+    if (!match) return String(value).trim();
+    const formatModifier = modifier => {
+      const number = Number(modifier);
+      return `${number >= 0 ? "+" : ""}${number}`;
+    };
+    return `${match[1]} ${formatModifier(match[2])} ${formatModifier(match[3])}`;
+  }
+
+  function createItemCard(item, isDefault) {
     const article = document.createElement("article");
-    article.className = "item-card";
+    const layout = isDefault ? "other" : itemLayout(item);
+    article.className = `item-card item-card-${layout}`;
 
     const titleRow = document.createElement("div");
     titleRow.className = "item-title";
@@ -439,28 +580,62 @@
     }
     article.append(badges);
 
-    const details = document.createElement("dl");
+    const details = document.createElement("div");
     details.className = "item-details";
-    appendDetail(details, "Keywords", item.keywords);
-    appendDetail(details, "Stats", item.stats);
-    appendDetail(details, "Restrictions", item.restricts);
-    appendDetail(details, "AC", item.ac);
-    appendDetail(details, "Flags", [item.extra1, item.extra2].filter(Boolean).join(" / "));
-    appendDetail(details, "Weapon dice", item.weaponDice);
-    appendDetail(details, "Throw", item.weaponThrow);
-    appendDetail(details, "Forge", item.forgeType ? `${item.forgeType}; cost ${item.forgeCost}; explosion ${item.forgeExplosion}` : "");
-    appendDetail(details, "Forger VNUM", item.forger);
-    appendDetail(details, "Forger", item.forgerName);
-    appendDetail(details, "Found on mobs", item.mobs);
-    appendDetail(details, "Mob names", item.mobNames);
-    appendDetail(details, "Area names", item.areaNames);
-    appendDetail(details, "Date added", item.dateadded);
-    appendDetail(details, "Related items", item.cpFor);
-    appendDetail(details, "Components", item.cps);
-    appendDetail(details, "Clasps", item.claspsForItem);
-    appendDetail(details, "Attachments", item.attach);
+    const keywords = document.createElement("div");
+    keywords.className = "item-keywords";
+    appendTextLine(keywords, item.keywords, "item-keyword-primary");
+    appendTextLine(keywords, item.dateadded ? `Date added: ${flatten(item.dateadded)}` : "");
+    appendTextLine(keywords, item.restricts);
+    appendTextLine(keywords, [item.extra1, item.extra2].filter(Boolean).join(" "));
+    const primary = document.createElement("dl");
+    primary.className = "item-detail-column";
+    const attributes = document.createElement("dl");
+    attributes.className = "item-detail-column";
+    const source = document.createElement("dl");
+    source.className = "item-detail-column";
+    details.append(keywords, primary, attributes, source);
+
+    if (layout === "worn") appendDetail(primary, "AC", item.ac);
+    if (layout === "weapon") {
+      appendMarker(primary, weaponHitDice(item.weaponDice), "item-monospace-value");
+      if (item.weaponThrow) appendMarker(primary, "Throw");
+    } else if (item.weaponThrow) {
+      appendMarker(attributes, "Throw");
+    }
+
+    if (layout !== "worn" && Number(item.ac) !== 0) appendDetail(attributes, "AC", item.ac);
+    if (layout !== "weapon") appendDetail(attributes, "Weapon dice", item.weaponDice);
+    appendUnlabeledDetail(attributes, item.stats);
+    const forgerVnum = Number(item.forger);
+    if (item.forger && Number.isFinite(forgerVnum) && forgerVnum !== 0) {
+      appendDetail(source, "Forger", item.forgerName);
+    }
+    appendDetail(source, "Forge", item.forgeType ? `${item.forgeType}; cost ${item.forgeCost}; explosion ${item.forgeExplosion}` : "");
+    appendMobSources(source, item);
+    appendCpForLinks(source, item.cpFor);
+    appendDetail(source, "Components", item.cps);
+    appendDetail(source, "Clasps", item.claspsForItem);
+    appendDetail(source, "Attachments", item.attach);
     if (details.childElementCount) article.append(details);
     return article;
+  }
+
+  function appendTextLine(container, value, className = "") {
+    if (value === undefined || value === null || value === "") return;
+    const line = document.createElement("div");
+    if (className) line.className = className;
+    line.textContent = flatten(value);
+    container.append(line);
+  }
+
+  function appendUnlabeledDetail(list, value) {
+    if (value === undefined || value === null || value === "") return;
+    const row = document.createElement("div");
+    const detail = document.createElement("dd");
+    detail.textContent = flatten(value);
+    row.append(detail);
+    list.append(row);
   }
 
   function updateTypeControls() {
@@ -510,7 +685,7 @@
       const content = document.createElement("div");
       content.className = "result-group-items";
       for (const item of groupItems) {
-        content.append(createItemCard(item));
+        content.append(createItemCard(item, isDefault));
         renderedItems += 1;
         if (shownItems.length > renderBatchSize && renderedItems % renderBatchSize === 0) {
           if (!section.isConnected) {
@@ -537,7 +712,7 @@
         .sort((a, b) => dateAddedTimestamp(b) - dateAddedTimestamp(a))
         .slice(0, 100)
       : results;
-    filteredItems = sortItems(displayedResults);
+    filteredItems = isDefault ? displayedResults : sortItems(displayedResults);
     resultCount.textContent = `${filteredItems.length.toLocaleString()} item${filteredItems.length === 1 ? "" : "s"} found`;
     noResults.hidden = filteredItems.length !== 0;
     loadError.hidden = true;
@@ -561,11 +736,25 @@
 
   async function loadData() {
     try {
-      const response = await fetch(app.dataset.itemsUrl);
+      const [response, locationsResponse] = await Promise.all([
+        fetch(app.dataset.itemsUrl),
+        fetch(app.dataset.mobLocationsUrl)
+      ]);
       if (!response.ok) throw new Error(`Item data request failed (${response.status}).`);
-      const data = await response.json();
+      if (!locationsResponse.ok) throw new Error(`Mob location data request failed (${locationsResponse.status}).`);
+      const [data, locations] = await Promise.all([response.json(), locationsResponse.json()]);
       if (!Array.isArray(data.items)) throw new Error("Item data does not contain an items array.");
+      if (!locations || typeof locations !== "object" || Array.isArray(locations)) {
+        throw new Error("Mob location data is not a VNUM lookup.");
+      }
+      for (const [vnum, location] of Object.entries(locations)) {
+        if (!/^\d+$/.test(vnum) || !location || typeof location.name !== "string"
+          || typeof location.area !== "string" || typeof location.continent !== "string") {
+          throw new Error(`Mob location data contains an invalid entry for VNUM ${vnum}.`);
+        }
+      }
       items = data.items;
+      mobLocations = new Map(Object.entries(locations));
       render();
     } catch (error) {
       resultCount.textContent = "Could not load item data.";
@@ -594,6 +783,16 @@
     setTriState(filter, nextState);
     updateUrl();
     render();
+  });
+  resultsList.addEventListener("click", event => {
+    const link = event.target.closest("a[data-search-query]");
+    if (!link || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    history.pushState(null, "", link.href);
+    applyUrlState();
+    updateTypeControls();
+    render();
+    searchInput.focus();
   });
   searchInput.addEventListener("input", () => {
     clearTimeout(searchTimer);
